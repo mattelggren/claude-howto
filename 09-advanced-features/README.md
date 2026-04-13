@@ -11,28 +11,31 @@ Comprehensive guide to Claude Code's advanced capabilities including planning mo
 
 1. [Overview](#overview)
 2. [Planning Mode](#planning-mode)
-3. [Extended Thinking](#extended-thinking)
-4. [Auto Mode](#auto-mode)
-5. [Background Tasks](#background-tasks)
-6. [Scheduled Tasks](#scheduled-tasks)
-7. [Permission Modes](#permission-modes)
-8. [Headless Mode](#headless-mode)
-9. [Session Management](#session-management)
-10. [Interactive Features](#interactive-features)
-11. [Voice Dictation](#voice-dictation)
-12. [Channels](#channels)
-13. [Chrome Integration](#chrome-integration)
-14. [Remote Control](#remote-control)
-15. [Web Sessions](#web-sessions)
-16. [Desktop App](#desktop-app)
-17. [Task List](#task-list)
-18. [Prompt Suggestions](#prompt-suggestions)
-19. [Git Worktrees](#git-worktrees)
-20. [Sandboxing](#sandboxing)
-21. [Managed Settings (Enterprise)](#managed-settings-enterprise)
-22. [Configuration and Settings](#configuration-and-settings)
-23. [Best Practices](#best-practices)
-24. [Additional Resources](#additional-resources)
+3. [Ultraplan (Cloud Plan Drafting)](#ultraplan-cloud-plan-drafting)
+4. [Extended Thinking](#extended-thinking)
+5. [Auto Mode](#auto-mode)
+6. [Background Tasks](#background-tasks)
+7. [Monitor Tool (Event-Driven Streams)](#monitor-tool-event-driven-streams)
+8. [Scheduled Tasks](#scheduled-tasks)
+9. [Permission Modes](#permission-modes)
+10. [Headless Mode](#headless-mode)
+11. [Session Management](#session-management)
+12. [Interactive Features](#interactive-features)
+13. [Voice Dictation](#voice-dictation)
+14. [Channels](#channels)
+15. [Chrome Integration](#chrome-integration)
+16. [Remote Control](#remote-control)
+17. [Web Sessions](#web-sessions)
+18. [Desktop App](#desktop-app)
+19. [Task List](#task-list)
+20. [Prompt Suggestions](#prompt-suggestions)
+21. [Git Worktrees](#git-worktrees)
+22. [Sandboxing](#sandboxing)
+23. [Managed Settings (Enterprise)](#managed-settings-enterprise)
+24. [Configuration and Settings](#configuration-and-settings)
+25. [Agent Teams](#agent-teams)
+26. [Best Practices](#best-practices)
+27. [Additional Resources](#additional-resources)
 
 ---
 
@@ -198,6 +201,60 @@ claude --model opusplan "design and implement the new API"
 
 ---
 
+## Ultraplan (Cloud Plan Drafting)
+
+> **New in v2.1.101**: Ultraplan now auto-creates a Claude Code on the web cloud environment the first time you invoke it — no manual setup, no waiting for a container to warm up before the draft starts.
+
+> **Note**: Ultraplan is a research preview and requires Claude Code v2.1.91 or newer.
+
+`/ultraplan` hands a planning task from your local CLI to a Claude Code on the web session running in plan mode. Claude drafts the plan in the cloud while your terminal stays free for other work, then you review the draft in the browser and choose where to execute — in the same cloud session or teleported back to your terminal.
+
+### When to Use Ultraplan
+
+- You want a richer review surface than the terminal: inline comments, emoji reactions, an outline sidebar, and persistent history.
+- You want hands-off drafting while you keep coding locally — the cloud session researches the repo and writes the plan without blocking your CLI.
+- The plan needs stakeholder review before execution — a shareable web URL beats pasting terminal scrollback.
+
+### Requirements
+
+- A Claude Code on the web account.
+- A GitHub repository (the cloud session clones your repo to draft against real code).
+- **Not available** on Amazon Bedrock, Google Cloud Vertex AI, or Microsoft Foundry.
+
+### Three Ways to Launch
+
+- **Command**: `/ultraplan <prompt>` — explicit invocation.
+- **Keyword**: include the word `ultraplan` anywhere in a normal prompt and Claude routes the request to the cloud.
+- **From a local plan**: after Claude finishes a plan locally, pick "No, refine with Ultraplan on Claude Code on the web" in the approval dialog to hand the draft off for deeper research.
+
+### Usage Example
+
+```bash
+/ultraplan migrate the auth service from sessions to JWTs
+```
+
+Claude acknowledges, spins up the cloud environment (auto-created on first run in v2.1.101+), and returns a session link you can open in your browser.
+
+### Status Indicators
+
+| Status | Meaning |
+|---|---|
+| `◇ ultraplan` | Claude is researching your codebase and drafting the plan |
+| `◇ ultraplan needs your input` | Claude has a clarifying question; open the session link to respond |
+| `◆ ultraplan ready` | The plan is ready to review in your browser |
+
+### Execution Options
+
+Once the plan is ready, you have two execution paths. Approve the plan in the browser to execute in the same cloud session — Claude implements the changes remotely and opens a pull request from the web UI. Or choose "Approve plan and teleport back to terminal" to implement locally. The terminal teleport dialog offers three choices:
+
+- **Implement here** — run the approved plan in your current terminal session.
+- **Start new session** — open a fresh session in the same working directory and implement there.
+- **Cancel** — saves the plan to a file so you can pick it up later.
+
+> **Warning**: Remote Control disconnects when ultraplan starts. Both features share the claude.ai/code interface, so only one can be active at a time.
+
+---
+
 ## Extended Thinking
 
 Extended thinking allows Claude to spend more time reasoning about complex problems before providing a solution.
@@ -347,8 +404,9 @@ Auto Mode is a Research Preview permission mode (March 2026) that uses a backgro
 
 ### Requirements
 
-- **Plan**: Team plan (Enterprise and API rolling out)
+- **Plan**: Team, Enterprise, or API (not available on Pro or Max plans)
 - **Model**: Claude Sonnet 4.6 or Opus 4.6
+- **Provider**: Anthropic API only (not supported on Bedrock, Vertex, or Foundry)
 - **Classifier**: Runs on Claude Sonnet 4.6 (adds extra token cost)
 
 ### Enabling Auto Mode
@@ -582,6 +640,43 @@ Claude: [Shows linter output from bg-5002]
   }
 }
 ```
+
+---
+
+## Monitor Tool (Event-Driven Streams)
+
+> **New in v2.1.98**: The Monitor tool lets Claude watch a background command's stdout and react the moment a matching event appears — replacing polling loops and `sleep` for waiting on long-running processes.
+
+Monitor attaches to any shell command that writes to stdout. Each stdout line from the command becomes a notification that wakes the session. Claude specifies the command; the harness streams output and delivers events as they fire. See the related [Background Tasks](#background-tasks) section for launching the underlying processes.
+
+### Why It Matters
+
+Polling with `/loop` or `sleep` burns a full API round-trip every cycle, whether or not anything changed. Monitor stays silent until an event fires, consuming **zero tokens** while the command is quiet. When an event does occur, Claude reacts immediately — no delayed discovery waiting for the next poll tick. For anything that runs longer than a few minutes, this is both cheaper and faster than poll loops.
+
+### Two Common Patterns
+
+**Stream filters** watch continuous output from a long-running source. The command runs forever; every matching line is an event.
+
+```bash
+tail -f /var/log/app.log | grep --line-buffered "ERROR"
+```
+
+**Poll-and-emit filters** check a source periodically and only emit when something changes. Use this for APIs, databases, or anything without a native stream.
+
+```bash
+last=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+while true; do
+  gh api "repos/owner/repo/issues/123/comments?since=$last" || true
+  last=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  sleep 30
+done
+```
+
+### Concrete Example
+
+"Start my dev server and monitor it for errors." Claude launches the server as a background task, attaches a Monitor filter (`tail -F server.log | grep --line-buffered -E "ERROR|FATAL"`), and the session goes quiet. The moment an error line appears in the log, Claude wakes up, reads the error, and can react — restart the server, fix the bug, or surface it to you — without you having to check in.
+
+> **Warning**: When piping into `grep`, **always** use `grep --line-buffered`. Without it, grep buffers stdout in 4KB chunks, which can delay events by minutes on low-traffic streams. This is the #1 way Monitor breaks in practice — if your filter seems silent when it shouldn't be, check for the `--line-buffered` flag first.
 
 ---
 
@@ -1170,13 +1265,16 @@ Customize the push-to-talk keybinding in your keybindings file (`/keybindings`).
 
 ## Channels
 
-Channels (Research Preview) allow MCP servers to push messages into running Claude Code sessions, enabling real-time integrations with external services.
+Channels is a Research Preview feature that pushes events from external services into a running Claude Code session via MCP servers. Sources include Telegram, Discord, iMessage, and arbitrary webhooks, allowing Claude to react to real-time notifications without polling.
 
 ### Subscribing to Channels
 
 ```bash
 # Subscribe to channel plugins at startup
 claude --channels discord,telegram
+
+# Subscribe to multiple sources
+claude --channels discord,telegram,imessage,webhooks
 ```
 
 ### Supported Integrations
@@ -1185,10 +1283,12 @@ claude --channels discord,telegram
 |-------------|-------------|
 | **Discord** | Receive and respond to Discord messages in your session |
 | **Telegram** | Receive and respond to Telegram messages in your session |
+| **iMessage** | Receive iMessage notifications in your session |
+| **Webhooks** | Receive events from arbitrary webhook sources |
 
 ### Configuration
 
-**Managed setting** for enterprise deployments:
+Configure channels with the `--channels` flag at startup. For enterprise deployments, use the managed setting to control which channel plugins are permitted:
 
 ```json
 {
@@ -1201,9 +1301,10 @@ The `allowedChannelPlugins` managed setting controls which channel plugins are p
 ### How It Works
 
 1. MCP servers act as channel plugins that connect to external services
-2. Incoming messages are pushed into the active Claude Code session
+2. Incoming messages and events are pushed into the active Claude Code session
 3. Claude can read and respond to messages within the session context
 4. Channel plugins must be approved via the `allowedChannelPlugins` managed setting
+5. No polling required — events are pushed in real time
 
 ---
 
@@ -1759,12 +1860,12 @@ export ENABLE_TOOL_SEARCH=true
 export CLAUDE_CODE_TASK_LIST_ID=my-project-tasks
 
 # Agent teams (experimental)
-export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=true
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 # Subagent and plugin configuration
 export CLAUDE_CODE_SUBAGENT_MODEL=sonnet
 export CLAUDE_CODE_PLUGIN_SEED_DIR=./my-plugins
-export CLAUDE_CODE_NEW_INIT=true
+export CLAUDE_CODE_NEW_INIT=1
 
 # Subprocess and streaming
 export CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="SECRET_KEY,DB_PASSWORD"
@@ -1811,6 +1912,62 @@ Create `.claude/config.json` in your project:
   }
 }
 ```
+
+---
+
+## Agent Teams
+
+Agent Teams is an experimental feature that enables multiple Claude Code instances to collaborate on a task. It is disabled by default.
+
+### Enabling Agent Teams
+
+Enable via environment variable or settings:
+
+```bash
+# Environment variable
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+```
+
+Or add to your settings JSON:
+
+```json
+{
+  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+}
+```
+
+### How Agent Teams Work
+
+- A **team lead** coordinates the overall task and delegates subtasks to teammates
+- **Teammates** work independently, each with their own context window
+- A **shared task list** enables self-coordination between team members
+- Use subagent definitions (`.claude/agents/` or `--agents` flag) to define teammate roles and specializations
+
+### Display Modes
+
+Agent Teams support two display modes, configured with the `--teammate-mode` flag:
+
+| Mode | Description |
+|------|-------------|
+| `in-process` (default) | Teammates run within the same terminal process |
+| `tmux` | Each teammate gets a dedicated split pane (requires tmux or iTerm2) |
+| `auto` | Automatically selects the best display mode |
+
+```bash
+# Use tmux split panes for teammate display
+claude --teammate-mode tmux
+
+# Explicitly use in-process mode
+claude --teammate-mode in-process
+```
+
+### Use Cases
+
+- Large refactoring tasks where different teammates handle different modules
+- Parallel code review and implementation
+- Coordinated multi-file changes across a codebase
+
+> **Note**: Agent Teams is experimental and may change in future releases. See [code.claude.com/docs/en/agent-teams](https://code.claude.com/docs/en/agent-teams) for the full reference.
 
 ---
 
@@ -1869,3 +2026,15 @@ For more information about Claude Code and related features:
 - [Official Remote Control Documentation](https://code.claude.com/docs/en/remote-control)
 - [Official Keybindings Documentation](https://code.claude.com/docs/en/keybindings)
 - [Official Desktop App Documentation](https://code.claude.com/docs/en/desktop)
+- [Official Agent Teams Documentation](https://code.claude.com/docs/en/agent-teams)
+
+---
+**Last Updated**: April 11, 2026
+**Claude Code Version**: 2.1.101
+**Sources**:
+- https://code.claude.com/docs/en/ultraplan
+- https://code.claude.com/docs/en/tools-reference
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/remote-control
+- https://code.claude.com/docs/en/agent-teams
+**Compatible Models**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5

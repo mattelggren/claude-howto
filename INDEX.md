@@ -874,7 +874,10 @@ Want to add more examples? Follow the structure:
 
 ---
 
-**Last Updated**: March 2026
+**Last Updated**: April 11, 2026
+**Claude Code Version**: 2.1.101
+**Sources**:
+- https://code.claude.com/docs/en/overview
 **Total Examples**: 100+ files
 **Categories**: 10 features
 **Hooks**: 8 automation scripts
