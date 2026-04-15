@@ -148,9 +148,9 @@ cp 02-memory/project-CLAUDE.md ./CLAUDE.md
 ```
 
 #### Success Criteria
-- [ ] Successfully invoke `/optimize` command
-- [ ] Claude remembers your project standards from CLAUDE.md
-- [ ] You understand when to use slash commands vs. memory
+- [x] Successfully invoke `/optimize` command
+- [x] Claude remembers your project standards from CLAUDE.md
+- [x] You understand when to use slash commands vs. memory
 
 #### Next Steps
 Once comfortable, read:
