@@ -192,8 +192,8 @@ cat error.log | claude -p "explain this error"
 ```
 
 #### Success Criteria
-- [ ] Created and reverted to a checkpoint
-- [ ] Used both interactive and print mode
+- [x] Created and reverted to a checkpoint
+- [x] Used both interactive and print mode
 - [ ] Piped a file to Claude for analysis
 - [ ] Understand when to use checkpoints for safe experimentation
 
