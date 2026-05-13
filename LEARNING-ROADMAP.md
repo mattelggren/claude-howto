@@ -194,8 +194,8 @@ cat error.log | claude -p "explain this error"
 #### Success Criteria
 - [x] Created and reverted to a checkpoint
 - [x] Used both interactive and print mode
-- [ ] Piped a file to Claude for analysis
-- [ ] Understand when to use checkpoints for safe experimentation
+- [x] Piped a file to Claude for analysis
+- [x] Understand when to use checkpoints for safe experimentation
 
 #### Next Steps
 - Read: [08-checkpoints/README.md](08-checkpoints/README.md)
