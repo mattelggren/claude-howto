@@ -317,6 +317,10 @@ When a plugin includes `settings.json`, its defaults are applied on installation
 
 Use **standalone slash commands** for quick personal workflows. Use **plugins** when you want to bundle multiple features, share with a team, or publish for distribution.
 
+> **Spaced invocation (v2.1.136+)**: Plugin slash commands also work with a space — `/myplugin review` resolves to the canonical `/myplugin:review`. Either form is fine; the colon form is canonical and recommended in scripts.
+
+> **`skills/` discovery (v2.1.136+)**: A `skills` entry in `plugin.json` no longer hides the plugin's default `skills/` directory. Skills declared in both places are merged, so you can list a few highlights in `plugin.json` without losing the rest.
+
 ## Practical Examples
 
 ### Example 1: PR Review Plugin
@@ -660,9 +664,13 @@ claude plugin enable <name>                  # Enable a disabled plugin
 claude plugin disable <name>                 # Disable a plugin
 claude plugin validate                       # Validate plugin structure
 claude plugin tag <version>                  # Create a release git tag with version validation (v2.1.118+)
+claude plugin prune                          # Remove orphaned auto-installed plugin dependencies (v2.1.121+)
+claude plugin uninstall <name> --prune       # Uninstall and cascade-clean orphaned dependencies (v2.1.121+)
 ```
 
 Example: `claude plugin tag v0.3.0` validates the version format, creates the matching git tag, and is the recommended way to cut plugin releases for distribution.
+
+`claude plugin prune` is useful after installing or uninstalling marketplace plugins that pulled in their own dependencies — it removes any auto-installed plugins whose parent plugin has since been removed. `plugin uninstall --prune` does the same cascade in a single step.
 
 ## Installation Methods
 
@@ -684,6 +692,12 @@ claude plugin install plugin-name@marketplace-name
 # CLI flag for local testing (repeatable for multiple plugins)
 claude --plugin-dir ./path/to/plugin
 claude --plugin-dir ./plugin-a --plugin-dir ./plugin-b
+
+# --plugin-dir also accepts a .zip archive path (v2.1.128+)
+claude --plugin-dir ./my-plugin.zip
+
+# Fetch a plugin .zip archive from a URL for the current session (v2.1.129+, repeatable)
+claude --plugin-url https://example.com/releases/my-plugin-0.3.0.zip
 ```
 
 ### From Git Repository
@@ -756,6 +770,12 @@ Before publishing, test your plugin locally using the `--plugin-dir` CLI flag (r
 ```bash
 claude --plugin-dir ./my-plugin
 claude --plugin-dir ./my-plugin --plugin-dir ./another-plugin
+
+# --plugin-dir accepts .zip archives in addition to directories (v2.1.128+)
+claude --plugin-dir ./my-plugin.zip
+
+# --plugin-url fetches a plugin .zip from a URL for this session (v2.1.129+, repeatable)
+claude --plugin-url https://example.com/releases/my-plugin-0.3.0.zip
 ```
 
 This launches Claude Code with your plugin loaded, allowing you to:
@@ -1033,12 +1053,13 @@ The following Claude Code features work together with plugins:
 
 ---
 
-**Last Updated**: April 24, 2026
-**Claude Code Version**: 2.1.119
+**Last Updated**: May 9, 2026
+**Claude Code Version**: 2.1.138
 **Sources**:
 - https://code.claude.com/docs/en/plugins
 - https://code.claude.com/docs/en/plugin-marketplaces
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.117
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.118
-- https://github.com/anthropics/claude-code/releases/tag/v2.1.119
+- https://github.com/anthropics/claude-code/releases/tag/v2.1.131
+- https://github.com/anthropics/claude-code/releases/tag/v2.1.138
 **Compatible Models**: Claude Sonnet 4.6, Claude Opus 4.7, Claude Haiku 4.5
