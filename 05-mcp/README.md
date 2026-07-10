@@ -181,6 +181,11 @@ If your MCP server returns errors on the standard OAuth metadata endpoint (`/.we
 
 The URL must use `https://`. This option requires Claude Code v2.1.64 or later.
 
+#### Authentication Startup Notice and Dynamic-Header Refresh (v2.1.193)
+
+- **Startup auth notice (v2.1.193+)**: At startup, Claude Code surfaces a notice listing any MCP servers that still need authentication, so a server that needs a login isn't left silently non-working.
+- **`headersHelper` auto-refresh (v2.1.193+)**: If you supply custom auth via a `headersHelper`, the helper is re-invoked automatically when a server returns HTTP 401 or 403. Credentials refresh on the fly without a manual reconnect. See [Use dynamic headers for custom authentication](https://code.claude.com/docs/en/mcp).
+
 ### Claude.ai MCP Connectors
 
 MCP servers configured in your Claude.ai account are automatically available in Claude Code. This means any MCP connections you set up through the Claude.ai web interface will be accessible without additional configuration.
@@ -361,9 +366,17 @@ claude mcp remove github
 # Reset project-specific approval choices
 claude mcp reset-project-choices
 
+# Authenticate an MCP server from the CLI (v2.1.186+)
+claude mcp login github
+
+# Sign out of an MCP server (v2.1.186+)
+claude mcp logout github
+
 # Import from Claude Desktop
 claude mcp add-from-claude-desktop
 ```
+
+`claude mcp login <name>` / `claude mcp logout <name>` are the non-interactive equivalent of the OAuth flow in the `/mcp` menu — authenticate or sign out without opening it. Add `--no-browser` to `login` to complete OAuth over SSH or in a headless session (it redirects the flow through stdin).
 
 ## Available MCP Servers Table
 
@@ -1170,11 +1183,13 @@ export GITHUB_TOKEN="your_token"
 
 ---
 
-**Last Updated**: June 10, 2026
-**Claude Code Version**: 2.1.170
+**Last Updated**: June 28, 2026
+**Claude Code Version**: 2.1.195
 **Sources**:
 - https://code.claude.com/docs/en/mcp
 - https://code.claude.com/docs/en/changelog
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.117
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.139
+- https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
+- https://docs.anthropic.com/en/docs/claude-code/mcp
 **Compatible Models**: Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
